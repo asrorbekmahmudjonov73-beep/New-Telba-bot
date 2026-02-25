@@ -6,7 +6,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.environ.get("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -76,5 +76,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Bot to'xtatildi")
+
 
 
