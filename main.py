@@ -6,10 +6,6 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_HOST = os.getenv("RENDER_EXTERNAL_URL")
-WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
-
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -79,4 +75,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
