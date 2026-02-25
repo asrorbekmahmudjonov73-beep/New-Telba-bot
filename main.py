@@ -6,16 +6,15 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
-# Render'da Environment Variable sifatida kiritgan TOKEN'ni oladi
+# 1. Bot sozlamalari
 TOKEN = os.getenv("TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Loglarni sozlash
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-# Voice ma'lumotlari - barcha ID va nomlar shu yerda
-VOICES = [
+# 2. Ovozlar ro'yxati (all_voices deb nomlangan)
+all_voices = [
     {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
     {"id": "2", "title": "Meni chaqirib, o'zlaring yoqsanlar", "file_id": "AwACAgQAAxkBAAMtaZIy6KTFhtUa4Yh8TiooV8ceI1wAAj8fAAL0VGBQ25_d8sbzMlc6BA"},
     {"id": "3", "title": "bir narsa qimimizmi, tashkillashtirmimzmi ?", "file_id": "AwACAgQAAxkBAAMvaZIzFDUB4xjcQNd2JZhBi5N83WYAAkEfAAL0VGBQU2kF05FKze46BA"},
@@ -36,22 +35,24 @@ VOICES = [
     {"id": "18", "title": "Turinglar ee soat 8:30 bolyapti", "file_id": "AwACAgQAAxkBAANPaZIzoA5GRjLOqY3oL6DY3U9ESzEAArkdAAIx9pFQT1Z_OqjVU1A6BA"},
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
+
+# 3. Inline Handler (Tuzatilgan qism)
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
     search_text = query.query.lower()
-    # 'all_voices' ro'yxatidan foydalanamiz
-    for v in all_voices: 
+    for v in all_voices: # Ro'yxat nomi to'g'rilandi
         if search_text in v["title"].lower():
             results.append(
                 InlineQueryResultVoice(
-                    id=v["id"],
-                    voice_url=v["file_id"], # 'url' emas, 'file_id' bo'lishi shart
+                    id=v["id"], 
+                    voice_url=v["file_id"], # 'url' o'rniga 'file_id' qo'yildi
                     title=v["title"]
                 )
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
+# 4. Web Server (Render Health Check uchun)
 async def handle(request):
     return web.Response(text="Bot is running!")
 
@@ -60,7 +61,6 @@ async def start_bot():
     await dp.start_polling(bot)
 
 async def main():
-    # Render uchun portni sozlash
     port = int(os.environ.get("PORT", 8080))
     app = web.Application()
     app.router.add_get("/", handle)
@@ -68,7 +68,6 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     
-    # Web server va botni parallel yurgizish
     await asyncio.gather(
         site.start(),
         start_bot()
@@ -79,7 +78,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
-
-
-
-
