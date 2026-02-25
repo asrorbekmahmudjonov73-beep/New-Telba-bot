@@ -47,40 +47,33 @@ async def inline_handler(query: InlineQuery):
             )
     await query.answer(results[:50], cache_time=0)
 
-# 3. Render Health Check Server
-async def handle(request):
-    return web.Response(text="Bot is alive!")
+# 3. Render Health Check uchun Web Server
+async def handle_health_check(request):
+    return web.Response(text="Bot is running!")
 
-async def make_app():
+async def start_web_server():
     app = web.Application()
-    app.router.add_get("/", handle)
-    return app
+    app.router.add_get("/", handle_health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    # Render portini avtomatik aniqlaydi
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"Web server {port}-portda ishga tushdi")
 
 # 4. Asosiy ishga tushirish qismi
 async def main():
-    # Render portini olish
-    port = int(os.environ.get("PORT", 8080))
+    # Web server va Botni parallel ishga tushirish
+    await start_web_server()
     
-    # Web serverni tayyorlash
-    app = await make_app()
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    
-    print(f"Server {port}-portda ishlamoqda...")
-    await site.start()
-
-    # Botni polling qilish
-    try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
-    except Exception as e:
-        logging.error(f"Botda xatolik: {e}")
-    finally:
-        await bot.session.close()
+    print("Bot pollingni boshlamoqda...")
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        pass
+        logging.info("Bot to'xtatildi")
+
