@@ -1,10 +1,9 @@
+import asyncio
 import logging
 import os
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import Update
-
-logging.basicConfig(level=logging.INFO)
+from aiogram.types import InlineQuery, InlineQueryResultVoice
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_HOST = os.getenv("RENDER_EXTERNAL_URL")
@@ -13,6 +12,8 @@ WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+logging.basicConfig(level=logging.INFO)
 
 all_voices = [
     {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
@@ -36,39 +37,46 @@ all_voices = [
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
 
-# =========================
-# INLINE HANDLER (O'ZGARMADI)
-# =========================
+@dp.inline_query()
+async def inline_handler(query: InlineQuery):
+    results = []
+    search_text = query.query.lower()
+    for v in all_voices:
+        if search_text in v["title"].lower():
+            results.append(
+                InlineQueryResultVoice(
+                    id=v["id"], 
+                    voice_url=v["file_id"], # file_id bu yerda url vazifasida
+                    title=v["title"]
+                )
+            )
+    await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# 🎤 Voice handler
-@dp.message(F.voice)
-async def handle_voice(message: types.Message):
-    await message.answer("Ovozli xabar qabul qilindi 🎤")
-
-# Webhook handler
+# 4. Web Server (Render 'Live' turishi uchun)
 async def handle(request):
-    update = Update.model_validate(await request.json(), context={"bot": bot})
-    await dp.feed_update(bot, update)
-    return web.Response()
+    return web.Response(text="Bot is running!")
 
-# Startup
-async def on_startup(app):
-    await bot.set_webhook(WEBHOOK_URL)
-    print("Webhook o‘rnatildi:", WEBHOOK_URL)
+async def start_bot():
+    # Webhookni o'chirib, toza pollingni boshlaymiz
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
-# Shutdown
-async def on_shutdown(app):
-    await bot.delete_webhook()
-
-def main():
+async def main():
+    port = int(os.environ.get("PORT", 8080))
     app = web.Application()
-    app.router.add_post(WEBHOOK_PATH, handle)
-
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-
-    port = int(os.getenv("PORT", 10000))
-    web.run_app(app, host="0.0.0.0", port=port)
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    
+    await asyncio.gather(
+        site.start(),
+        start_bot()
+    )
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
