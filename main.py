@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
@@ -10,7 +11,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 # 2️⃣ Loglarni sozlash
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 all_voices = [
         {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
@@ -39,37 +40,47 @@ all_voices = [
 async def inline_handler(query: InlineQuery):
     results = []
     search_text = query.query.lower()
-    for v in VOICES: # type: ignore
+    for v in VOICES:
         if search_text in v["title"].lower():
             results.append(
                 InlineQueryResultVoice(id=v["id"], voice_url=v["url"], title=v["title"])
             )
-    await query.answer(results[:50], cache_time=0, is_personal=True)
+    await query.answer(results[:50], cache_time=0)
 
-# 4. Render uchun oddiy Web Server (Health Check)
+# 3. Render Health Check Server
 async def handle(request):
-    return web.Response(text="Bot is running!")
+    return web.Response(text="Bot is alive!")
 
-app = web.Application()
-app.router.add_get("/", handle)
+async def make_app():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    return app
 
-# 5. Asosiy ishga tushirish funksiyasi
-async def start_bot():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
-
+# 4. Asosiy ishga tushirish qismi
 async def main():
-    # Render beradigan portni olamiz (default 8080)
+    # Render portini olish
     port = int(os.environ.get("PORT", 8080))
+    
+    # Web serverni tayyorlash
+    app = await make_app()
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     
-    # Ham web serverni, ham botni bir vaqtda ishga tushiramiz
-    await asyncio.gather(
-        site.start(),
-        start_bot()
-    )
+    print(f"Server {port}-portda ishlamoqda...")
+    await site.start()
+
+    # Botni polling qilish
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+    except Exception as e:
+        logging.error(f"Botda xatolik: {e}")
+    finally:
+        await bot.session.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
