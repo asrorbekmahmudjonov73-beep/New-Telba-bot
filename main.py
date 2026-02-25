@@ -1,35 +1,18 @@
 import logging
 import os
-import sys
 from aiohttp import web
-from aiogram import Bot, Dispatcher, F
-from aiogram.types import InlineQuery, InlineQueryResultVoice
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.types import Update
 
-# =========================
-# ENV
-# =========================
+logging.basicConfig(level=logging.INFO)
 
-TOKEN = os.getenv("TOKEN")
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
-BASE_URL = os.getenv("RENDER_EXTERNAL_URL")
-
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_HOST = os.getenv("RENDER_EXTERNAL_URL")
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = f"{BASE_URL}{WEBHOOK_PATH}"
-PORT = int(os.getenv("PORT", 10000))
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-# =========================
-# BOT INIT
-# =========================
-
-bot = Bot(token=TOKEN)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-
-# =========================
-# OVOZLAR (O'ZGARMADI)
-# =========================
 
 all_voices = [
     {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
@@ -57,48 +40,35 @@ all_voices = [
 # INLINE HANDLER (O'ZGARMADI)
 # =========================
 
-@dp.inline_query()
-async def inline_handler(query: InlineQuery):
-    results = []
-    search_text = query.query.lower()
-    for v in all_voices:
-        if search_text in v["title"].lower():
-            results.append(
-                InlineQueryResultVoice(
-                    id=v["id"],
-                    voice_url=v["file_id"],
-                    title=v["title"]
-                )
-            )
-    await query.answer(results[:50], cache_time=0, is_personal=True)
+# 🎤 Voice handler
+@dp.message(F.voice)
+async def handle_voice(message: types.Message):
+    await message.answer("Ovozli xabar qabul qilindi 🎤")
 
-# =========================
-# WEBHOOK STARTUP
-# =========================
+# Webhook handler
+async def handle(request):
+    update = Update.model_validate(await request.json(), context={"bot": bot})
+    await dp.feed_update(bot, update)
+    return web.Response()
 
-async def on_startup(bot: Bot):
-    await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
-    logging.info(f"Webhook set to {WEBHOOK_URL}")
+# Startup
+async def on_startup(app):
+    await bot.set_webhook(WEBHOOK_URL)
+    print("Webhook o‘rnatildi:", WEBHOOK_URL)
 
-async def on_shutdown(bot: Bot):
+# Shutdown
+async def on_shutdown(app):
     await bot.delete_webhook()
-    logging.info("Webhook deleted")
 
 def main():
     app = web.Application()
+    app.router.add_post(WEBHOOK_PATH, handle)
 
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
-    SimpleRequestHandler(
-        dispatcher=dp,
-        bot=bot,
-        secret_token=WEBHOOK_SECRET,
-    ).register(app, path=WEBHOOK_PATH)
-
-    setup_application(app, dp, bot=bot)
-
-    web.run_app(app, host="0.0.0.0", port=PORT)
+    port = int(os.getenv("PORT", 10000))
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     main()
