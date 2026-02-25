@@ -36,17 +36,17 @@ VOICES = [
     {"id": "18", "title": "Turinglar ee soat 8:30 bolyapti", "file_id": "AwACAgQAAxkBAANPaZIzoA5GRjLOqY3oL6DY3U9ESzEAArkdAAIx9pFQT1Z_OqjVU1A6BA"},
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
-
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
     search_text = query.query.lower()
-    for v in VOICES:
+    # 'all_voices' ro'yxatidan foydalanamiz
+    for v in all_voices: 
         if search_text in v["title"].lower():
             results.append(
                 InlineQueryResultVoice(
                     id=v["id"],
-                    voice_url=v["file_id"],
+                    voice_url=v["file_id"], # 'url' emas, 'file_id' bo'lishi shart
                     title=v["title"]
                 )
             )
@@ -79,6 +79,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
