@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from aiohttp import web
+from aiogram import F
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
@@ -78,3 +79,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
