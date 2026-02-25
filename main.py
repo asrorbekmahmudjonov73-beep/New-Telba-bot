@@ -1,19 +1,18 @@
 import asyncio
 import logging
 import os
-import sys
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
-TOKEN = os.environ.get("BOT_TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 # 2️⃣ Loglarni sozlash
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.INFO,
 
-all_voices = [
+voices = [
         {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
         {"id": "2", "title": "Meni chaqirib, o'zlaring yoqsanlar", "file_id": "AwACAgQAAxkBAAMtaZIy6KTFhtUa4Yh8TiooV8ceI1wAAj8fAAL0VGBQ25_d8sbzMlc6BA"},
         {"id": "3", "title": "bir narsa qimimizmi, tashkillashtirmimzmi ?", "file_id": "AwACAgQAAxkBAAMvaZIzFDUB4xjcQNd2JZhBi5N83WYAAkEfAAL0VGBQU2kF05FKze46BA"},
@@ -45,7 +44,7 @@ async def inline_handler(query: InlineQuery):
             results.append(
                 InlineQueryResultVoice(id=v["id"], voice_url=v["url"], title=v["title"])
             )
-    await query.answer(results[:50], cache_time=0)
+    await query.answer(results[:50], cache_time=0, is_personal=True)
 
 # 3. Render Health Check uchun Web Server
 async def handle_health_check(request):
@@ -76,6 +75,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Bot to'xtatildi")
+
 
 
 
