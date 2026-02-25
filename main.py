@@ -1,20 +1,36 @@
-import asyncio
 import logging
 import os
 import sys
 from aiohttp import web
-from aiogram import F
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import InlineQuery, InlineQueryResultVoice
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
-# 1. Bot sozlamalari
+# =========================
+# ENV
+# =========================
+
 TOKEN = os.getenv("TOKEN")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+BASE_URL = os.getenv("RENDER_EXTERNAL_URL")
+
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = f"{BASE_URL}{WEBHOOK_PATH}"
+PORT = int(os.getenv("PORT", 10000))
+
+# =========================
+# BOT INIT
+# =========================
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-# 2. Ovozlar ro'yxati (all_voices deb nomlangan)
+# =========================
+# OVOZLAR (O'ZGARMADI)
+# =========================
+
 all_voices = [
     {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
     {"id": "2", "title": "Meni chaqirib, o'zlaring yoqsanlar", "file_id": "AwACAgQAAxkBAAMtaZIy6KTFhtUa4Yh8TiooV8ceI1wAAj8fAAL0VGBQ25_d8sbzMlc6BA"},
@@ -37,46 +53,52 @@ all_voices = [
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
 
-# 3. Inline Handler (Tuzatilgan qism)
+# =========================
+# INLINE HANDLER (O'ZGARMADI)
+# =========================
+
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
     search_text = query.query.lower()
-    for v in all_voices: # Ro'yxat nomi to'g'rilandi
+    for v in all_voices:
         if search_text in v["title"].lower():
             results.append(
                 InlineQueryResultVoice(
-                    id=v["id"], 
-                    voice_url=v["file_id"], # 'url' o'rniga 'file_id' qo'yildi
+                    id=v["id"],
+                    voice_url=v["file_id"],
                     title=v["title"]
                 )
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# 4. Web Server (Render Health Check uchun)
-async def handle(request):
-    return web.Response(text="Bot is running!")
+# =========================
+# WEBHOOK STARTUP
+# =========================
 
-async def start_bot():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+async def on_startup(bot: Bot):
+    await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
+    logging.info(f"Webhook set to {WEBHOOK_URL}")
 
-async def main():
-    port = int(os.environ.get("PORT", 8080))
+async def on_shutdown(bot: Bot):
+    await bot.delete_webhook()
+    logging.info("Webhook deleted")
+
+def main():
     app = web.Application()
-    app.router.add_get("/", handle)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    
-    await asyncio.gather(
-        site.start(),
-        start_bot()
-    )
+
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
+
+    SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        secret_token=WEBHOOK_SECRET,
+    ).register(app, path=WEBHOOK_PATH)
+
+    setup_application(app, dp, bot=bot)
+
+    web.run_app(app, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        pass
-
+    main()
