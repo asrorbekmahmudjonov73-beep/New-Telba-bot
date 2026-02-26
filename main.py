@@ -1,16 +1,19 @@
 import asyncio
 import logging
 import os
+import sys
 from aiohttp import web
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot = Bot(token=BOT_TOKEN)
+# 1. Bot sozlamalari
+TOKEN = os.getenv("TOKEN") 
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
+# 2. Ovozlar ro'yxati
 all_voices = [
     {"id": "1", "title": "Haydelar", "file_id": "AwACAgQAAxkBAAMraZIyb_9L6kLbApOLoSmypRV7XD4AAgwcAALVgVFQ-5vxHXZ_I5Y6BA"},
     {"id": "2", "title": "Meni chaqirib, o'zlaring yoqsanlar", "file_id": "AwACAgQAAxkBAAMtaZIy6KTFhtUa4Yh8TiooV8ceI1wAAj8fAAL0VGBQ25_d8sbzMlc6BA"},
@@ -33,6 +36,7 @@ all_voices = [
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
 
+# 3. Inline Handler (Faqat file_id bilan ishlaydi)
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
@@ -42,18 +46,17 @@ async def inline_handler(query: InlineQuery):
             results.append(
                 InlineQueryResultVoice(
                     id=v["id"], 
-                    voice_url=v["file_id"], # file_id bu yerda url vazifasida
+                    voice_url=v["file_id"], 
                     title=v["title"]
                 )
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# 4. Web Server (Render 'Live' turishi uchun)
+# 4. Web Sahifa (Cron-job uchun kerak)
 async def handle(request):
-    return web.Response(text="Bot is running!")
+    return web.Response(text="Bot ishlayapti, uxlagani qo'ymaymiz!")
 
 async def start_bot():
-    # Webhookni o'chirib, toza pollingni boshlaymiz
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
@@ -75,5 +78,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
-
-
