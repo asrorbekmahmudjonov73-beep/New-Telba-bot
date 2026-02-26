@@ -3,10 +3,11 @@ import logging
 import os
 import sys
 from aiohttp import web
-from aiogram import Bot, Dispatcher, types F
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
 # 1. Bot sozlamalari
+# Render'dagi Environment Variable nomi bilan bir xil (TOKEN) bo'lishi kerak
 TOKEN = os.getenv("TOKEN") 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -36,15 +37,14 @@ all_voices = [
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
 
-# ... (all_voices ro'yxatidan pastda)
-
-# 🎤 1. Ovozli xabar yuborilganda uning ID sini beruvchi qism
+# 3. Handlerlar
+# 🎤 Yangi ovozlar uchun file_id olish (Botga shunchaki ovoz yuboring)
 @dp.message(F.voice)
 async def get_voice_id(message: types.Message):
     file_id = message.voice.file_id
     await message.answer(f"Ovozli xabar ID-si:\n\n<code>{file_id}</code>", parse_mode="HTML")
 
-# 🔍 2. Inline Query Handler (Ovozlarni qidirish)
+# 🔍 Inline Query Handler (Ovozlarni qidirish va yuborish)
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
@@ -60,9 +60,7 @@ async def inline_handler(query: InlineQuery):
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# ... (keyin esa Web Sahifa va main() funksiyalari keladi)
-
-# 4. Web Sahifa (Cron-job uchun kerak)
+# 4. Web Server (Render Health Check va Cron-job uchun)
 async def handle(request):
     return web.Response(text="Bot ishlayapti, uxlagani qo'ymaymiz!")
 
@@ -71,6 +69,7 @@ async def start_bot():
     await dp.start_polling(bot)
 
 async def main():
+    # Render PORT'ni avtomatik beradi, agar bo'lmasa 8080 ishlatiladi
     port = int(os.environ.get("PORT", 8080))
     app = web.Application()
     app.router.add_get("/", handle)
@@ -78,6 +77,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     
+    # Ham veb-serverni, ham botni baravar yurgizish
     await asyncio.gather(
         site.start(),
         start_bot()
@@ -88,4 +88,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
-
