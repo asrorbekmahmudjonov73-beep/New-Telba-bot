@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from aiohttp import web
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types F
 from aiogram.types import InlineQuery, InlineQueryResultVoice
 
 # 1. Bot sozlamalari
@@ -36,7 +36,15 @@ all_voices = [
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
 ]
 
-# 3. Inline Handler (Faqat file_id bilan ishlaydi)
+# ... (all_voices ro'yxatidan pastda)
+
+# 🎤 1. Ovozli xabar yuborilganda uning ID sini beruvchi qism
+@dp.message(F.voice)
+async def get_voice_id(message: types.Message):
+    file_id = message.voice.file_id
+    await message.answer(f"Ovozli xabar ID-si:\n\n<code>{file_id}</code>", parse_mode="HTML")
+
+# 🔍 2. Inline Query Handler (Ovozlarni qidirish)
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
@@ -51,6 +59,8 @@ async def inline_handler(query: InlineQuery):
                 )
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
+
+# ... (keyin esa Web Sahifa va main() funksiyalari keladi)
 
 # 4. Web Sahifa (Cron-job uchun kerak)
 async def handle(request):
@@ -78,3 +88,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
