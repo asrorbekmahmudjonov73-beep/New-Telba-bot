@@ -6,7 +6,7 @@ import re
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineQuery, InlineQueryResultVoice, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineQuery, InlineQueryResultVoice, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 # 1. Bot sozlamalari
 TOKEN = os.getenv("TOKEN") 
@@ -40,9 +40,13 @@ all_voices = [
 
 # 3. Tugmalar (Keyboard)
 main_menu = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="Barcha ovozlar"), KeyboardButton(text="Sozlamalar")]
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="uz UZB", callback_data="lang_uz), 
+            InlineKeyboardButton(text="ru Rus", callback_data="lang_ru")
+        ]
     ],
+)   
     resize_keyboard=True
 )
 
@@ -52,9 +56,22 @@ main_menu = ReplyKeyboardMarkup(
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
-        "Xush kelibsiz! Ovozli xabarlarni ko'rish uchun 'Barcha ovozlar' tugmasini bosing.",
+        "Welcome !\nChoose Language",
         reply_markup=main_menu
     )
+
+@dp.callback_query(F.date.startswith("Lang_"))
+async def select_language(callback: types.CallackQuery):
+    # Foydalanuvchi qaysi tilni tanlaganini aniqlaymiz (ixtiyoriy)
+    lang = callback.data.split("_")[1]
+
+if lang == "uz":
+    await callback.message.answer("O'zbek tili tanlandi!, reply_markup=main_menu)
+    else:
+        await callback.message.answer("Выбран русский язык!", reply_markup=main_menu)
+    
+    # Soat belgisi (loading) aylanishini to'xtatish uchun
+    await callback.answer()
 
 # "Barcha ovozlar" tugmasi bosilganda
 @dp.message(F.text == "Barcha ovozlar")
@@ -75,7 +92,10 @@ async def send_specific_voice(message: types.Message):
     voice_data = next((v for v in all_voices if v["id"] == voice_id), None)
     
     if voice_data:
-        await message.answer_voice(voice_data["file_id"])
+        await message.answer_voice(
+            voice_data["file_id"],
+            caption=f"Ovoz: {voice_data['title']}"
+        )
     else:
         await message.answer("Bunday raqamli ovoz topilmadi.")
 
@@ -129,3 +149,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
