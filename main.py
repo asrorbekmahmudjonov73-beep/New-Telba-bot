@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sys
+import re
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -46,32 +47,48 @@ main_menu = ReplyKeyboardMarkup(
 )
 
 # 4. Handlerlar
-# /start komandasi uchun
+
+# /start komandasi
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
-        "Xush kelibsiz! Quyidagi tugmalardan birini tanlang yoki inline rejimda ishlating.",
+        "Xush kelibsiz! Ovozli xabarlarni ko'rish uchun 'Barcha ovozlar' tugmasini bosing.",
         reply_markup=main_menu
     )
 
-# "Barcha ovozlar" tugmasi uchun
+# "Barcha ovozlar" tugmasi bosilganda
 @dp.message(F.text == "Barcha ovozlar")
 async def show_all_voices(message: types.Message):
-    text = "Botdagi barcha ovozlar:\n\n"
+    text = "Siz uchun barcha ovozlar ro'yxati:\n\n"
     for v in all_voices:
-        text += f"• {v['title']}\n"
+        # Har bir ovozni /1, /2 ko'rinishida chiqaradi
+        text += f"/{v['id']}. {v['title']}\n"
     await message.answer(text)
 
-# "Sozlamalar" tugmasi uchun
+# "/1", "/2" kabi buyruqlar kelganda ovozni yuborish
+@dp.message(F.text.regexp(r"^/(\d+)$"))
+async def send_specific_voice(message: types.Message):
+    # Raqamni ajratib olamiz (masalan "/5" -> "5")
+    voice_id = message.text.replace("/", "")
+    
+    # Ro'yxatdan o'sha ID ga mos ovozni qidiramiz
+    voice_data = next((v for v in all_voices if v["id"] == voice_id), None)
+    
+    if voice_data:
+        await message.answer_voice(voice_data["file_id"])
+    else:
+        await message.answer("Bunday raqamli ovoz topilmadi.")
+
+# "Sozlamalar" tugmasi
 @dp.message(F.text == "Sozlamalar")
 async def settings(message: types.Message):
-    await message.answer("Sozlamalar bo'limi hozircha bo'sh.")
+    await message.answer("Sozlamalar bo'limi hozircha tayyor emas.")
 
-# 🎤 Ovozli xabar ID-sini olish
+# 🎤 Yangi ovozlar uchun file_id olish
 @dp.message(F.voice)
 async def get_voice_id(message: types.Message):
     file_id = message.voice.file_id
-    await message.answer(f"Ovozli xabar ID-si:\n\n<code>{file_id}</code>", parse_mode="HTML")
+    await message.answer(f"Yangi ovoz ID-si:\n<code>{file_id}</code>", parse_mode="HTML")
 
 # 🔍 Inline Query
 @dp.inline_query()
@@ -89,9 +106,9 @@ async def inline_handler(query: InlineQuery):
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# 5. Web Server
+# 5. Web Server (Cron-job va Render uchun)
 async def handle(request):
-    return web.Response(text="Bot ishlayapti, uxlagani qo'ymaymiz!")
+    return web.Response(text="Bot ishlayapti!")
 
 async def start_bot():
     await bot.delete_webhook(drop_pending_updates=True)
@@ -105,10 +122,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     
-    await asyncio.gather(
-        site.start(),
-        start_bot()
-    )
+    await asyncio.gather(site.start(), start_bot())
 
 if __name__ == "__main__":
     try:
