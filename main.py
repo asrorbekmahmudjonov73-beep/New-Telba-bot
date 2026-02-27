@@ -93,11 +93,14 @@ main_menu_ru = ReplyKeyboardMarkup(
 # "Barcha ovozlar" yoki "Все голоса" bosilganda
 @dp.message(F.text.in_(["Barcha ovozlar", "Все голоsa"]))
 async def show_all_voices(message: types.Message):
-    # Bu yerda tilga qarab matnni o'zgartirish ham mumkin
-    title_text = "Barcha ovozlar:" if message.text == "Barcha ovozlar" else "Все голоса:"
-    text = f"{title_text}\n\n"
+    if title_text == "Barcha ovozlar:" 
+       text = "Barcha ovozlar ro'yxati:\n\n"
+else:
+      text = "Список всех голосов:\n\n"
+   # 3. Ro'yxatni shakllantiramiz (o'zgarmaydi)
     for v in all_voices:
         text += f"/{v['id']}. {v['title']}\n"
+        
     await message.answer(text)
 
 # "/1", "/2" kabi buyruqlar kelganda ovozni yuborish
@@ -168,6 +171,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
