@@ -36,16 +36,19 @@ all_voices = [
     {"id": "17", "title": "Arda guler...", "file_id": "AwACAgQAAxkBAANNaZIzhXFLJrJvL3YfkgKz_4VtZZAAArgdAAIx9pFQPLsHuBFhSPs6BA"},
     {"id": "18", "title": "Turinglar ee soat 8:30 bolyapti", "file_id": "AwACAgQAAxkBAANPaZIzoA5GRjLOqY3oL6DY3U9ESzEAArkdAAIx9pFQT1Z_OqjVU1A6BA"},
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
+    {"id": "20", "title": "Baxtiyor o baxtiyor nima indamisan", "file_id": "AwACAgQAAxkBAANxaaBA5PgFCcRYxvNlLSfDpxFRcBgAAlsrAAKrBMhT-rTpEJD829U6BA"},
+    {"id": "21", "title": "Bilasilarmi do'stlarim q...niyam bilmesilar", "file_id": "AwACAgQAAxkBAAN2aaBWrlrEAAEButzYW7V7KiEVCkZvAAI6AwACooytU98Pxk0qAnQ-OgQ"},
+    {"id": "22", "title": "Qoraka keldi Gruppani qorakasi", "file_id": "AwACAgIAAxkBAAN4aaBZGidXMGoNF-Pa2nxUNjD_1noAAoIMAALxGehKF6GkRwGIAuU6BA"},
 ]
 
-# 3. Tugmalar (Keyboard)
-main_menu = ReplyKeyboardMarkup(
+# 3 Tillar uchun inline tugmalar
+language_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="uz UZB", callback_data="lang_uz"), 
-            InlineKeyboardButton(text="ru Rus", callback_data="lang_ru")
+            InlineKeyboardButton(text="🇺🇿 Uzb", callback_data="lang_uz"),
+            InlineKeyboardButton(text="🇷🇺 Rus", callback_data="lang_ru")
         ]
-    ],   
+    ]
 )
 # 4. Handlerlar
 
@@ -53,8 +56,8 @@ main_menu = ReplyKeyboardMarkup(
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
-        "Welcome !\nChoose Language",
-        reply_markup=main_menu
+        "Welcome !\nChoose Language", 
+        reply_markup=language_menu
     )
 
 @dp.callback_query(F.data.startswith("lang_"))
@@ -145,6 +148,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
