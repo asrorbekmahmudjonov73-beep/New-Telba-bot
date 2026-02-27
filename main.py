@@ -45,11 +45,8 @@ main_menu = ReplyKeyboardMarkup(
             InlineKeyboardButton(text="uz UZB", callback_data="lang_uz"), 
             InlineKeyboardButton(text="ru Rus", callback_data="lang_ru")
         ]
-    ],
-)   
-    resize_keyboard=True
+    ],   
 )
-
 # 4. Handlerlar
 
 # /start komandasi
@@ -149,5 +146,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
