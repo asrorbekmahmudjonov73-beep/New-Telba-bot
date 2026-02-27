@@ -7,6 +7,8 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineQuery, InlineQueryResultVoice, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
 # 1. Bot sozlamalari
 TOKEN = os.getenv("TOKEN") 
@@ -78,15 +80,37 @@ async def select_language(callback: types.CallbackQuery):
     
     # Callback so'roviga javob berish (tugma ustidagi 'loading'ni yo'qotadi)
     await callback.answer()
-    # O'zbekcha menyu
+  # --- O'zbekcha menyular ---
 main_menu_uz = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="Barcha ovozlar"), KeyboardButton(text="Sozlamalar")]],
+    keyboard=[
+        [KeyboardButton(text="Barcha ovozlar"), KeyboardButton(text="Sozlamalar")]
+    ],
     resize_keyboard=True
 )
 
-# Ruscha menyu
+settings_menu_uz = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="🇺🇿 Tilni o'zgartirish")],
+        [KeyboardButton(text="✍️ Admin bilan bog'lanish")],
+        [KeyboardButton(text="⬅️ Ortga")]
+    ],
+    resize_keyboard=True
+)
+
+# --- Ruscha menyular ---
 main_menu_ru = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="Все голоса"), KeyboardButton(text="Настройки")]],
+    keyboard=[
+        [KeyboardButton(text="Все голоса"), KeyboardButton(text="Настройки")]
+    ],
+    resize_keyboard=True
+)
+
+settings_menu_ru = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="🇷🇺 Изменить язык")],
+        [KeyboardButton(text="✍️ Связаться с админом")],
+        [KeyboardButton(text="⬅️ Назад")]
+    ],
     resize_keyboard=True
 )
     
@@ -123,12 +147,55 @@ async def send_specific_voice(message: types.Message):
     else:
         await message.answer("Bunday raqamli ovoz topilmadi.")
 
-# "Sozlamalar" yoki "Настройки" bosilganda
+# 1. Sozlamalar tugmasi bosilganda (Ikkala til uchun)
 @dp.message(F.text.in_(["Sozlamalar", "Настройки"]))
-async def settings(message: types.Message):
-    text = "Sozlamalar bo'limi bo'sh" if message.text == "Sozlamalar" else "Раздел настроек пуст"
-    await message.answer(text)
+async def show_settings(message: types.Message):
+    if message.text == "Sozlamalar":
+        await message.answer("Sozlamalar bo'limi:", reply_markup=settings_menu_uz)
+    else:
+        await message.answer("Раздел настроек:", reply_markup=settings_menu_ru)
 
+# 2. Ortga qaytish (Ikkala til uchun)
+@dp.message(F.text.in_(["⬅️ Ortga", "⬅️ Назад"]))
+async def go_back(message: types.Message):
+    if message.text == "⬅️ Ortga":
+        await message.answer("Asosiy menyu", reply_markup=main_menu_uz)
+    else:
+        await message.answer("Главное меню", reply_markup=main_menu_ru)
+
+# 3. Tilni o'zgartirish (Sozlamalar ichida)
+@dp.message(F.text.in_(["🇺🇿 Tilni o'zgartirish", "🇷🇺 Изменить язык"]))
+async def change_lang(message: types.Message):
+    await message.answer("Choose Language / Выберите язык", reply_markup=language_menu)
+
+# 4. Admin bilan bog'lanish - BOSHLASH
+@dp.message(F.text.in_(["✍️ Admin bilan bog'lanish", "✍️ Связаться с админом"]))
+async def admin_contact_start(message: types.Message, state: FSMContext):
+    if message.text == "✍️ Admin bilan bog'lanish":
+        txt = "Xabaringizni yozing. Admin ko'rib chiqadi.\n\nBekor qilish uchun: /cancel"
+    else:
+        txt = "Напишите ваше сообщение. Админ его рассмотрит.\n\nДля отмены: /cancel"
+    
+    await message.answer(txt)
+    await state.set_state(AdminState.waiting_for_message)
+
+# 5. Admin bilan bog'lanish - XABARNI YUBORISH
+@dp.message(AdminState.waiting_for_message)
+async def admin_message_forward(message: types.Message, state: FSMContext):
+    # Bekor qilish komandasini tekshirish
+    if message.text == "/cancel":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=main_menu_uz)
+        return
+
+    # Adminga yo'naltirish
+    await bot.forward_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
+    
+    # Foydalanuvchiga javob (Tilni aniqlash uchun oddiy if)
+    if message.text: # yoki boshqa media bo'lsa ham
+        await message.answer("Xabaringiz yuborildi! ✅ / Сообщение отправлено! ✅")
+    
+    await state.clear()
 # 🎤 Yangi ovozlar uchun file_id olish
 @dp.message(F.voice)
 async def get_voice_id(message: types.Message):
@@ -174,6 +241,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
