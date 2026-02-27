@@ -4,10 +4,10 @@ import os
 import sys
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import InlineQuery, InlineQueryResultVoice
+from aiogram.filters import Command
+from aiogram.types import InlineQuery, InlineQueryResultVoice, ReplyKeyboardMarkup, KeyboardButton
 
 # 1. Bot sozlamalari
-# Render'dagi Environment Variable nomi bilan bir xil (TOKEN) bo'lishi kerak
 TOKEN = os.getenv("TOKEN") 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -35,19 +35,45 @@ all_voices = [
     {"id": "17", "title": "Arda guler...", "file_id": "AwACAgQAAxkBAANNaZIzhXFLJrJvL3YfkgKz_4VtZZAAArgdAAIx9pFQPLsHuBFhSPs6BA"},
     {"id": "18", "title": "Turinglar ee soat 8:30 bolyapti", "file_id": "AwACAgQAAxkBAANPaZIzoA5GRjLOqY3oL6DY3U9ESzEAArkdAAIx9pFQT1Z_OqjVU1A6BA"},
     {"id": "19", "title": "Assalomu allaykum Juma ayyom", "file_id": "AwACAgQAAxkBAANVaZIztrfYV7XQ6hbeH3lkInuYn_sAArwdAAIx9pFQK4VMQxvgEAo6BA"},
-    {"id": "20", "title": "Baxtiyor o baxtiyor nima indamisan", "file_id": "AwACAgQAAxkBAANxaaBA5PgFCcRYxvNlLSfDpxFRcBgAAlsrAAKrBMhT-rTpEJD829U6BA"},
-    {"id": "21", "title": "Bilasilarmi do'stlarim q...niyam bilmesilar", "file_id": "AwACAgQAAxkBAAN2aaBWrlrEAAEButzYW7V7KiEVCkZvAAI6AwACooytU98Pxk0qAnQ-OgQ"},
-    {"id": "22", "title": "Qoraka keldi Gruppani qorakasi", "file_id": "AwACAgIAAxkBAAN4aaBZGidXMGoNF-Pa2nxUNjD_1noAAoIMAALxGehKF6GkRwGIAuU6BA"},
 ]
 
-# 3. Handlerlar
-# 🎤 Yangi ovozlar uchun file_id olish (Botga shunchaki ovoz yuboring)
+# 3. Tugmalar (Keyboard)
+main_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Barcha ovozlar"), KeyboardButton(text="Sozlamalar")]
+    ],
+    resize_keyboard=True
+)
+
+# 4. Handlerlar
+# /start komandasi uchun
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer(
+        "Xush kelibsiz! Quyidagi tugmalardan birini tanlang yoki inline rejimda ishlating.",
+        reply_markup=main_menu
+    )
+
+# "Barcha ovozlar" tugmasi uchun
+@dp.message(F.text == "Barcha ovozlar")
+async def show_all_voices(message: types.Message):
+    text = "Botdagi barcha ovozlar:\n\n"
+    for v in all_voices:
+        text += f"• {v['title']}\n"
+    await message.answer(text)
+
+# "Sozlamalar" tugmasi uchun
+@dp.message(F.text == "Sozlamalar")
+async def settings(message: types.Message):
+    await message.answer("Sozlamalar bo'limi hozircha bo'sh.")
+
+# 🎤 Ovozli xabar ID-sini olish
 @dp.message(F.voice)
 async def get_voice_id(message: types.Message):
     file_id = message.voice.file_id
     await message.answer(f"Ovozli xabar ID-si:\n\n<code>{file_id}</code>", parse_mode="HTML")
 
-# 🔍 Inline Query Handler (Ovozlarni qidirish va yuborish)
+# 🔍 Inline Query
 @dp.inline_query()
 async def inline_handler(query: InlineQuery):
     results = []
@@ -63,7 +89,7 @@ async def inline_handler(query: InlineQuery):
             )
     await query.answer(results[:50], cache_time=0, is_personal=True)
 
-# 4. Web Server (Render Health Check va Cron-job uchun)
+# 5. Web Server
 async def handle(request):
     return web.Response(text="Bot ishlayapti, uxlagani qo'ymaymiz!")
 
@@ -72,7 +98,6 @@ async def start_bot():
     await dp.start_polling(bot)
 
 async def main():
-    # Render PORT'ni avtomatik beradi, agar bo'lmasa 8080 ishlatiladi
     port = int(os.environ.get("PORT", 8080))
     app = web.Application()
     app.router.add_get("/", handle)
@@ -80,7 +105,6 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     
-    # Ham veb-serverni, ham botni baravar yurgizish
     await asyncio.gather(
         site.start(),
         start_bot()
@@ -91,6 +115,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
-
-
-
