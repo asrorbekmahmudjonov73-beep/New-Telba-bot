@@ -95,7 +95,7 @@ main_menu_ru = ReplyKeyboardMarkup(
 async def show_all_voices(message: types.Message):
     if title_text == "Barcha ovozlar": 
        text = "Barcha ovozlar ro'yxati:\n\n"
-else:
+    else:
       text = "Список всех голосов:\n\n"
    # 3. Ro'yxatni shakllantiramiz (o'zgarmaydi)
     for v in all_voices:
@@ -171,6 +171,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
