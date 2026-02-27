@@ -42,7 +42,7 @@ all_voices = [
 main_menu = ReplyKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="uz UZB", callback_data="lang_uz), 
+            InlineKeyboardButton(text="uz UZB", callback_data="lang_uz"), 
             InlineKeyboardButton(text="ru Rus", callback_data="lang_ru")
         ]
     ],
@@ -149,4 +149,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
