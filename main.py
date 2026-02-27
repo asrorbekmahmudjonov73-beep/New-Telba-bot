@@ -90,8 +90,6 @@ main_menu_ru = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
     
-    # Soat belgisi (loading) aylanishini to'xtatish uchun
-    await callback.answer()
 # "Barcha ovozlar" yoki "Все голоса" bosilganda
 @dp.message(F.text.in_(["Barcha ovozlar", "Все голоsa"]))
 async def show_all_voices(message: types.Message):
@@ -170,6 +168,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
