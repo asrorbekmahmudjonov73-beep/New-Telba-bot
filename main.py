@@ -58,12 +58,12 @@ async def cmd_start(message: types.Message):
     )
 
 @dp.callback_query(F.date.startswith("Lang_"))
-async def select_language(callback: types.CallackQuery):
+async def select_language(callback: types.CallbackQuery):
     # Foydalanuvchi qaysi tilni tanlaganini aniqlaymiz (ixtiyoriy)
-    lang = callback.data.split("_")[1]
+ lang = callback.data.split("_")[1]
 
 if lang == "uz":
-    await callback.message.answer("O'zbek tili tanlandi!, reply_markup=main_menu)
+    await callback.message.answer("O'zbek tili tanlandi!", reply_markup=main_menu)
     else:
         await callback.message.answer("Выбран русский язык!", reply_markup=main_menu)
     
@@ -146,6 +146,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
