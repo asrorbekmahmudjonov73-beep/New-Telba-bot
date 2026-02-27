@@ -62,22 +62,24 @@ async def cmd_start(message: types.Message):
 
 @dp.callback_query(F.data.startswith("lang_"))
 async def select_language(callback: types.CallbackQuery):
-    # Foydalanuvchi qaysi tilni tanlaganini aniqlaymiz (ixtiyoriy)
     lang = callback.data.split("_")[1]
     
     if lang == "uz":
-        await callback.message.answer("O'zbek tili tanlandi!", reply_markup=main_menu)
+        await callback.message.answer("O'zbek tili tanlandi!", reply_markup=main_menu_uz)
     else:
-        await callback.message.answer("Выбран русский язык!", reply_markup=main_menu)
+        await callback.message.answer("Выбран русский язык!", reply_markup=main_menu_ru)
+    
+    await callback.answer()
     
     # Soat belgisi (loading) aylanishini to'xtatish uchun
     await callback.answer()
-# "Barcha ovozlar" tugmasi bosilganda
-@dp.message(F.text == "Barcha ovozlar")
+# "Barcha ovozlar" yoki "Все голоса" bosilganda
+@dp.message(F.text.in_(["Barcha ovozlar", "Все голоsa"]))
 async def show_all_voices(message: types.Message):
-    text = "Siz uchun barcha ovozlar ro'yxati:\n\n"
+    # Bu yerda tilga qarab matnni o'zgartirish ham mumkin
+    title_text = "Barcha ovozlar:" if message.text == "Barcha ovozlar" else "Все голоса:"
+    text = f"{title_text}\n\n"
     for v in all_voices:
-        # Har bir ovozni /1, /2 ko'rinishida chiqaradi
         text += f"/{v['id']}. {v['title']}\n"
     await message.answer(text)
 
@@ -98,10 +100,11 @@ async def send_specific_voice(message: types.Message):
     else:
         await message.answer("Bunday raqamli ovoz topilmadi.")
 
-# "Sozlamalar" tugmasi
-@dp.message(F.text == "Sozlamalar")
+# "Sozlamalar" yoki "Настройки" bosilganda
+@dp.message(F.text.in_(["Sozlamalar", "Настройки"]))
 async def settings(message: types.Message):
-    await message.answer("Sozlamalar bo'limi hozircha tayyor emas.")
+    text = "Sozlamalar bo'limi bo'sh" if message.text == "Sozlamalar" else "Раздел настроек пуст"
+    await message.answer(text)
 
 # 🎤 Yangi ovozlar uchun file_id olish
 @dp.message(F.voice)
@@ -148,6 +151,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
