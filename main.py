@@ -57,19 +57,18 @@ async def cmd_start(message: types.Message):
         reply_markup=main_menu
     )
 
-@dp.callback_query(F.date.startswith("Lang_"))
+@dp.callback_query(F.data.startswith("lang_"))
 async def select_language(callback: types.CallbackQuery):
     # Foydalanuvchi qaysi tilni tanlaganini aniqlaymiz (ixtiyoriy)
- lang = callback.data.split("_")[1]
-
-if lang == "uz":
-    await callback.message.answer("O'zbek tili tanlandi!", reply_markup=main_menu)
+    lang = callback.data.split("_")[1]
+    
+    if lang == "uz":
+        await callback.message.answer("O'zbek tili tanlandi!", reply_markup=main_menu)
     else:
         await callback.message.answer("Выбран русский язык!", reply_markup=main_menu)
     
     # Soat belgisi (loading) aylanishini to'xtatish uchun
     await callback.answer()
-
 # "Barcha ovozlar" tugmasi bosilganda
 @dp.message(F.text == "Barcha ovozlar")
 async def show_all_voices(message: types.Message):
@@ -146,6 +145,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
