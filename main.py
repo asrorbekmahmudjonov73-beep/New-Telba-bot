@@ -90,18 +90,22 @@ main_menu_ru = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
     
-# "Barcha ovozlar" yoki "Все голоса" bosilganda
-@dp.message(F.text.in_(["Barcha ovozlar", "Все голоsa"]))
+@dp.message(F.text.in_(["Barcha ovozlar", "Все голоса"]))
 async def show_all_voices(message: types.Message):
-    if title_text == "Barcha ovozlar": 
-       text = "Barcha ovozlar ro'yxati:\n\n"
-          text += f"/{v['id']}. {v['title']}\n"
+    # Matnni tekshiramiz (har ehtimolga qarshi .strip() qo'shamiz)
+    msg_text = message.text.strip()
+    
+    if msg_text == "Barcha ovozlar":
+        title_text = "Barcha ovozlar ro'yxati:\n\n"
     else:
-      text = "Список всех голосов:\n\n"
-         text += f"/{v['id']}. {v['title']}\n"
+        # Ruscha tugma bosilganda shu qism ishlaydi
+        title_text = "Список всех голосов:\n\n"
+    
+    text = title_text
+    for v in all_voices:
+        text += f"/{v['id']}. {v['title']}\n"
         
     await message.answer(text)
-
 # "/1", "/2" kabi buyruqlar kelganda ovozni yuborish
 @dp.message(F.text.regexp(r"^/(\d+)$"))
 async def send_specific_voice(message: types.Message):
@@ -170,6 +174,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
