@@ -141,16 +141,19 @@ async def go_back(message: types.Message):
 async def change_lang(message: types.Message):
     await message.answer("Choose Language / Выберите язык", reply_markup=language_menu)
 
-# Admin bilan bog'lanish - Boshlash
+# Admin bilan bog'lanish - BOSHLASH
 @dp.message(F.text.in_(["✍️ Admin bilan bog'lanish", "✍️ Связаться с админом"]))
 async def admin_contact_start(message: types.Message, state: FSMContext):
-    txt = "Xabaringizni yozing. Admin ko'rib chiqadi.\nBekor qilish uchun: /cancel" if "bog'lanish" in message.text else "Напишите сообщение. Админ рассмотрит.\nДля отмены: /cancel"
+    is_uz = "bog'lanish" in message.text
+    txt = "Xabaringizni yozing. Admin ko'rib chiqadi.\nBekor qilish uchun: /cancel" if is_uz else "Напишите сообщение. Админ рассмотрит.\nДля отмены: /cancel"
+    
     await message.answer(txt)
     await state.set_state(AdminState.waiting_for_message)
 
-# Admin bilan bog'lanish - Xabarni Adminga yuborish (Ism va Username bilan)
+# Admin bilan bog'lanish - Xabarni Adminga yuborish
 @dp.message(AdminState.waiting_for_message)
 async def admin_message_forward(message: types.Message, state: FSMContext):
+    # Bekor qilishni tekshirish
     if message.text == "/cancel":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=main_menu_uz)
@@ -160,7 +163,7 @@ async def admin_message_forward(message: types.Message, state: FSMContext):
     full_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "Mavjud emas"
 
-    # Admin ko'radigan panel
+    # Admin ko'radigan panel (ID qismi reply uchun muhim)
     info_header = (
         f"👤 <b>Yangi xabar!</b>\n"
         f"📋 <b>Ism:</b> {full_name}\n"
@@ -170,6 +173,7 @@ async def admin_message_forward(message: types.Message, state: FSMContext):
     )
     
     try:
+        # Xabarni adminga yuborish
         if message.text:
             await bot.send_message(chat_id=ADMIN_ID, text=info_header + message.text, parse_mode="HTML")
         else:
@@ -178,39 +182,42 @@ async def admin_message_forward(message: types.Message, state: FSMContext):
         
         await message.answer("Xabaringiz yuborildi! ✅")
     except Exception as e:
-        await message.answer("Xatolik yuz berdi.")
-        
+        await message.answer("Xatolik yuz berdi. Iltimos qaytadan urunib ko'ring.")
+    
     await state.clear()
 
 # --- ADMINDAN JAVOB QAYTARISH (REPLY) ---
 @dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
 async def admin_reply_handler(message: types.Message):
-    try:
-        # Reply qilingan xabardan ID ni qidirib topamiz
-        reply_content = message.reply_to_message.text or message.reply_to_message.caption
-        
-        if not reply_content:
-            return
+    # Reply qilingan xabar matnini olish
+    reply_content = message.reply_to_message.text or message.reply_to_message.caption
+    
+    if not reply_content:
+        return
 
-        # Regex orqali ID raqamini ajratib olamiz
-        match = re.search(r"🆔 ID: (\d+)", reply_content)
-        
-        if match:
-            target_user_id = int(match.group(1))
-            
-            # Admindan foydalanuvchiga javobni yuborish (Matn yoki Media)
+    # ID raqamini qidirib topish
+    match = re.search(r"🆔 ID: (\d+)", reply_content)
+    
+    if match:
+        target_user_id = int(match.group(1))
+        try:
             if message.text:
-                await bot.send_message(chat_id=target_user_id, text=f"👨‍💻 <b>Admin javobi:</b>\n\n{message.text}", parse_mode="HTML")
+                await bot.send_message(
+                    chat_id=target_user_id, 
+                    text=f"👨‍💻 <b>Admin javobi:</b>\n\n{message.text}", 
+                    parse_mode="HTML"
+                )
             else:
-                await bot.copy_message(chat_id=target_user_id, from_chat_id=message.chat.id, message_id=message.message_id)
-                
-            await message.answer(f"Javobingiz ID: {target_user_id} ga yuborildi! ✅")
-        else:
-            await message.answer("Xatolik: Bu xabarda foydalanuvchi ID si topilmadi. ID yozilgan xabarga 'Reply' qiling.")
-            
-    except Exception as e:
-        await message.answer(f"Javob yuborishda xatolik: {e}")
-
+                await bot.copy_message(
+                    chat_id=target_user_id, 
+                    from_chat_id=message.chat.id, 
+                    message_id=message.message_id
+                )
+            await message.answer(f"Javob yuborildi! (ID: {target_user_id})")
+        except Exception as e:
+            await message.answer(f"Yuborishda xatolik: {e}")
+    else:
+        await message.answer("Xatolik: ID topilmadi. ID yozilgan xabarga 'Reply' qiling.")
 # 🎤 Yangi ovozlar uchun file_id olish
 @dp.message(F.voice)
 async def get_voice_id(message: types.Message):
@@ -256,6 +263,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
