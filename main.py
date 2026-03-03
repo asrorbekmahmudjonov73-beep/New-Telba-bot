@@ -47,7 +47,6 @@ all_voices = [
     {"id": "22", "title": "Qoraka keldi Gruppani qorakasi", "file_id": "AwACAgIAAxkBAAN4aaBZGidXMGoNF-Pa2nxUNjD_1noAAoIMAALxGehKF6GkRwGIAuU6BA"},
 ]
 
-# --- 2. Klaviaturalar (Keyboards) ---
 language_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [
@@ -57,11 +56,11 @@ language_menu = InlineKeyboardMarkup(
     ]
 )
 
+# O'zbekcha menyular
 main_menu_uz = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Barcha ovozlar"), KeyboardButton(text="Sozlamalar")]],
     resize_keyboard=True
 )
-
 settings_menu_uz = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🇺🇿 Tilni o'zgartirish")],
@@ -71,11 +70,11 @@ settings_menu_uz = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+# Ruscha menyular
 main_menu_ru = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Все голоса"), KeyboardButton(text="Настройки")]],
     resize_keyboard=True
 )
-
 settings_menu_ru = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🇷🇺 Изменить язык")],
@@ -87,7 +86,7 @@ settings_menu_ru = ReplyKeyboardMarkup(
 
 # --- 3. Handlerlar ---
 
-# /start
+# /start komandasi
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("Welcome !\nChoose Language", reply_markup=language_menu)
@@ -102,18 +101,16 @@ async def select_language(callback: types.CallbackQuery):
         await callback.message.answer("Выбран русский язык!", reply_markup=main_menu_ru)
     await callback.answer()
 
-# Barcha ovozlar
+# Barcha ovozlar ro'yxati
 @dp.message(F.text.in_(["Barcha ovozlar", "Все голоса"]))
 async def show_all_voices(message: types.Message):
-    if message.text == "Barcha ovozlar":
-        text = "Barcha ovozlar ro'yxati:\n\n"
-    else:
-        text = "Список всех голосов:\n\n"
+    title = "Barcha ovozlar ro'yxati:\n\n" if message.text == "Barcha ovozlar" else "Список всех голосов:\n\n"
+    text = title
     for v in all_voices:
         text += f"/{v['id']}. {v['title']}\n"
     await message.answer(text)
 
-# Maxsus ovozni yuborish (Regex)
+# Maxsus ovozni yuborish (/1101 kabi)
 @dp.message(F.text.regexp(r"^/(\d+)$"))
 async def send_specific_voice(message: types.Message):
     voice_id = message.text.replace("/", "")
@@ -121,9 +118,9 @@ async def send_specific_voice(message: types.Message):
     if voice_data:
         await message.answer_voice(voice_data["file_id"], caption=f"🎵 {voice_data['title']}")
     else:
-        await message.answer("Bunday raqamli ovoz topilmadi / Голос не найден.")
+        await message.answer("Ovoz topilmadi / Голос не найден.")
 
-# Sozlamalar
+# Sozlamalar bo'limi
 @dp.message(F.text.in_(["Sozlamalar", "Настройки"]))
 async def show_settings(message: types.Message):
     if message.text == "Sozlamalar":
@@ -144,68 +141,51 @@ async def go_back(message: types.Message):
 async def change_lang(message: types.Message):
     await message.answer("Choose Language / Выберите язык", reply_markup=language_menu)
 
-# Admin bilan bog'lanish - BOSHLASH
+# Admin bilan bog'lanish - Boshlash
 @dp.message(F.text.in_(["✍️ Admin bilan bog'lanish", "✍️ Связаться с админом"]))
 async def admin_contact_start(message: types.Message, state: FSMContext):
     txt = "Xabaringizni yozing. Admin ko'rib chiqadi.\nBekor qilish uchun: /cancel" if "bog'lanish" in message.text else "Напишите сообщение. Админ рассмотрит.\nДля отмены: /cancel"
     await message.answer(txt)
     await state.set_state(AdminState.waiting_for_message)
 
-# Admin bilan bog'lanish - XABARNI YUBORISH
+# Admin bilan bog'lanish - Xabarni Adminga yuborish
 @dp.message(AdminState.waiting_for_message)
-async def admin_message_forward(message: types.Message, state: FSMContext):
-    if message.text == "/cancel":
-        await state.clear()
-        await message.answer("Bekor qilindi / Отменено", reply_markup=main_menu_uz)
-        return
-    
-   @dp.message(AdminState.waiting_for_message)
 async def admin_message_forward(message: types.Message, state: FSMContext):
     if message.text == "/cancel":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=main_menu_uz)
         return
 
-    # Adminga xabarni yuboramiz va foydalanuvchi ID-sini matnga qo'shamiz
-    # Bu usulda foydalanuvchi profili yopiq bo'lsa ham, ID bizga keladi
-    info_text = f"👤 Yangi xabar!\n🆔 ID: <code>{message.from_user.id}</code>\n\n"
+    # Foydalanuvchi ID sini matnga qo'shib yuboramiz (profili yopiq bo'lsa ham javob berish uchun)
+    info_header = f"👤 Yangi xabar!\n🆔 ID: <code>{message.from_user.id}</code>\n\n"
     
     if message.text:
-        await bot.send_message(chat_id=ADMIN_ID, text=info_text + message.text, parse_mode="HTML")
+        await bot.send_message(chat_id=ADMIN_ID, text=info_header + message.text, parse_mode="HTML")
     else:
-        # Agar rasm yoki boshqa narsa yuborsa, ID-ni alohida yuboramiz
-        await bot.send_message(chat_id=ADMIN_ID, text=info_text, parse_mode="HTML")
+        await bot.send_message(chat_id=ADMIN_ID, text=info_header, parse_mode="HTML")
         await bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
-
+    
     await message.answer("Xabaringiz yuborildi! ✅")
     await state.clear()
 
-import re
-
+# Admindan foydalanuvchiga javob qaytarish (Reply)
 @dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
 async def admin_reply_handler(message: types.Message):
     try:
-        # Reply qilingan xabar matnidan ID-ni qidirib topamiz
         reply_text = message.reply_to_message.text or message.reply_to_message.caption
-        
-        # Regex orqali ID raqamini ajratib olamiz
         match = re.search(r"🆔 ID: (\d+)", reply_text)
         
         if match:
             user_id = int(match.group(1))
-            
-            # Foydalanuvchiga javob yuborish
             if message.text:
                 await bot.send_message(chat_id=user_id, text=f"Admin javobi:\n\n{message.text}")
             else:
                 await bot.copy_message(chat_id=user_id, from_chat_id=message.chat.id, message_id=message.message_id)
-                
-            await message.answer("Javobingiz foydalanuvchiga yuborildi! ✅")
+            await message.answer("Javob yuborildi! ✅")
         else:
-            await message.answer("Xatolik: ID topilmadi. Iltimos, bot yuborgan '🆔 ID: ...' yozuvi bor xabarga reply qiling.")
-            
+            await message.answer("Xatolik: ID topilmadi. ID bor xabarga reply qiling.")
     except Exception as e:
-        await message.answer(f"Xabar yuborishda xatolik: {e}")
+        await message.answer(f"Xatolik: {e}")
 
 # 🎤 Yangi ovozlar uchun file_id olish
 @dp.message(F.voice)
@@ -252,6 +232,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
