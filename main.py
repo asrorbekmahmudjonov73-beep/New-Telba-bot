@@ -45,6 +45,8 @@ all_voices = [
     {"id": "20", "title": "Baxtiyor o baxtiyor nima indamisan", "file_id": "AwACAgQAAxkBAANxaaBA5PgFCcRYxvNlLSfDpxFRcBgAAlsrAAKrBMhT-rTpEJD829U6BA"},
     {"id": "21", "title": "Bilasilarmi do'stlarim q...niyam bilmesilar", "file_id": "AwACAgQAAxkBAAN2aaBWrlrEAAEButzYW7V7KiEVCkZvAAI6AwACooytU98Pxk0qAnQ-OgQ"},
     {"id": "22", "title": "Qoraka keldi Gruppani qorakasi", "file_id": "AwACAgIAAxkBAAN4aaBZGidXMGoNF-Pa2nxUNjD_1noAAoIMAALxGehKF6GkRwGIAuU6BA"},
+    {"id": "23", "title": "Do'stim ikki kundan beri uydan chiqmayapsiz...", "file_id": "AwACAgQAAxkBAAIBpmmpf2xs0rwI0bFofy2BPddaR0esAAKGCgACw6BUUQWZGQ505jD3OgQ"},
+    {"id": "24", "title": "Tinnem yog'yaptiyu bu yomg'ir", "file_id": "AwACAgQAAxkBAAIBqmmpgAhmy-h6K2gZMaqxj4x1uh2pAAIgCgACy5FNUTx2WL6D3UfOOgQ"},
 ]
 
 language_menu = InlineKeyboardMarkup(
@@ -263,6 +265,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
 
 
 
