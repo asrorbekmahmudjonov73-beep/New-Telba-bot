@@ -47,6 +47,7 @@ all_voices = [
     {"id": "22", "title": "Qoraka keldi Gruppani qorakasi", "file_id": "AwACAgIAAxkBAAN4aaBZGidXMGoNF-Pa2nxUNjD_1noAAoIMAALxGehKF6GkRwGIAuU6BA"},
     {"id": "23", "title": "Do'stim ikki kundan beri uydan chiqmayapsiz...", "file_id": "AwACAgQAAxkBAAIBpmmpf2xs0rwI0bFofy2BPddaR0esAAKGCgACw6BUUQWZGQ505jD3OgQ"},
     {"id": "24", "title": "Tinnem yog'yaptiyu bu yomg'ir", "file_id": "AwACAgQAAxkBAAIBqmmpgAhmy-h6K2gZMaqxj4x1uh2pAAIgCgACy5FNUTx2WL6D3UfOOgQ"},
+    {"id": "25", "title": "Idi naxxuy sani shu gapinga", "file_id": "AwACAgQAAxkBAAICfGm9Iygp33iAHZltNTuQbC8gh83sAALvHQAC35TxUZQO1_DfEDraOgQ"},
 ]
 
 language_menu = InlineKeyboardMarkup(
